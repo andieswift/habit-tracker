@@ -30,6 +30,9 @@ const Sidebar = props => {
           <Link to="/userRoutine">
             <SidebarItem onClick={props.closeSideBar} pic="fas fa-bars" text="Routines" />
           </Link>
+          <Link to="/chat">
+            <SidebarItem onClick={props.closeSideBar} pic="far fa-comment" text="Chat" />
+          </Link>
           <SidebarItem onClick={props.closeSideBar} pic="fas fa-times" text="Close" />
         </>
       );
@@ -45,6 +48,9 @@ const Sidebar = props => {
           <Link to="/userHabits">
             <SidebarItem onClick={props.closeSideBar} pic="fas fa-bars" text="Habits" />
           </Link>
+          <Link to="/chat">
+            <SidebarItem onClick={props.closeSideBar} pic="far fa-comment" text="Chat" />
+          </Link>
           <SidebarItem onClick={props.closeSideBar} pic="fas fa-times" text="Close" />
         </>
       );
@@ -59,6 +65,9 @@ const Sidebar = props => {
           </Link>
           <Link to="/userRoutine">
             <SidebarItem pic="fas fa-bars" text="Routines" />
+          </Link>
+          <Link to="/chat">
+            <SidebarItem onClick={props.closeSideBar} pic="far fa-comment" text="Chat" />
           </Link>
           <SidebarItem onClick={props.closeSideBar} pic="fas fa-times" text="Close" />
         </>

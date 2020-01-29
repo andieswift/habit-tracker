@@ -4,7 +4,7 @@ import UserRoutine from './userRoutine';
 import SignUpandSignIn from './signupandsignin';
 import RoutineRequest from './routineRequest';
 import { UserProvider } from './userContext';
-
+import Chat from './chat';
 import {
   Switch,
   Route,
@@ -94,6 +94,7 @@ export default class App extends React.Component {
               <Route exact path="/routineRequest" render={props => <RoutineRequest {...props} isOpen={this.state.sideBarOpen} openSideBar={this.openSideBar} />} />
               <Route exact path="/userHabits" render={props => <UserHabits {...props} newHabit={this.state.newHabitToPush} isOpen={this.state.sideBarOpen} openSideBar={this.openSideBar} addingInfo={this.addingInputInfoToState} />} />
               <Route exact path="/userRoutine" render={props => <UserRoutine {...props} isOpen={this.state.sideBarOpen} openSideBar={this.openSideBar} />} />
+              <Route exact path="/chat" render={props => <Chat {...props} isOpen={this.state.sideBarOpen} openSideBar={this.openSideBar} />} />
             </UserProvider>
           </Switch>
         </div>

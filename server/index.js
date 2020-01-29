@@ -576,8 +576,11 @@ app.post('/api/auth/login', (req, res, next) => {
       });
     })
     .catch(err => next(err));
-
 });
+
+app.get();
+
+app.post();
 
 app.use('/api', (req, res, next) => {
   next(new ClientError(`cannot ${req.method} ${req.originalUrl}`, 404));
