@@ -47,7 +47,8 @@ class SignIn extends React.Component {
         else this.setState(previousState => ({ wrongUsername: true }));
       })
       .then(res => {
-        this.props.setUserId(res);
+        sessionStorage.setItem('id', res);
+        this.props.setUserId();
         this.props.history.push('/userHabits');
       });
   }

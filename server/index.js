@@ -6,6 +6,7 @@ const ClientError = require('./client-error');
 const staticMiddleware = require('./static-middleware');
 const sessionMiddleware = require('./session-middleware');
 const bcrypt = require('bcrypt');
+const socketIo = require('socket.io');
 
 const app = express();
 
@@ -477,12 +478,11 @@ app.post('/api/habit', (req, res, next) => {
 
 // add habit to routine
 app.post('/api/routine/:id/habit', (req, res, next) => {
-  if (!req.params.id) next(new ClientError('Please enter a routine id', 400));
-  else if (!req.body.habitName) next(new ClientError('Please enter a habit name', 400));
+  if (!req.body.habitName) next(new ClientError('Please enter a habit name', 400));
   else if (!req.body.userId) next(new ClientError('Please enter a user id', 400));
   const integerTest = /^[1-9]\d*$/;
   if (!integerTest.exec(req.params.id) || !integerTest.exec(req.body.userId)) {
-    next(new ClientError('routineId or userId is not an integer', 404));
+    next(new ClientError('routineId or userId is not an integer', 400));
   }
   let habitId = null;
   const searchHabitSql = `
@@ -578,9 +578,147 @@ app.post('/api/auth/login', (req, res, next) => {
     .catch(err => next(err));
 });
 
-app.get();
+app.get('/api/chat/id/:user', (req, res, next) => {
+  const userList = [];
+  const integerTest = /^[1-9]\d*$/;
+  if (!integerTest.exec(req.params.user)) {
+    next(new ClientError(`userId ${req.params.user} is not an integer`, 400));
+  }
+  const checkUserIdSql = `
+    select *
+      from "user"
+     where "userId" = $1;
+  `;
+  const getSenderIdSql = `
+    select "senderId"
+      from "chat"
+     where "receiverId" = $1;
+  `;
+  const getReceiverIdSql = `
+    select "receiverId"
+      from "chat"
+     where "senderId" = $1;
+  `;
+  const userValue = [parseInt(req.params.user)];
+  db.query(checkUserIdSql, userValue)
+    .then(idResult => {
+      if (!idResult.rows.length) next(new ClientError('user cannot be found', 404));
+      else {
+        db.query(getSenderIdSql, userValue)
+          .then(senderResult => {
+            if (senderResult.rows.length) {
+              for (const item of senderResult.rows) userList.push(item.senderId);
+            }
+            db.query(getReceiverIdSql, userValue)
+              .then(recResult => {
+                if (recResult.rows.length) {
+                  for (const item of recResult.rows) userList.push(item.receiverId);
+                }
+                const userSet = new Set(userList);
+                const userArr = Array.from(userSet);
+                res.status(200).json(userArr);
+              })
+              .catch(err => next(err));
+          })
+          .catch(err => next(err));
+      }
+    })
+    .catch(err => next(err));
+});
 
-app.post();
+app.get('/api/chat/name/:user', (req, res, next) => {
+  const integerTest = /^[1-9]\d*$/;
+  if (!integerTest.exec(req.params.user)) {
+    next(new ClientError(`userId ${req.params.user} is not an integer`, 400));
+  }
+  const checkUserIdSql = `
+    select *
+      from "user"
+     where "userId" = $1;
+  `;
+  const getUserNameSql = `
+    select "userName"
+      from "user"
+     where "userId" = $1;
+  `;
+  const userValue = [parseInt(req.params.user)];
+  db.query(checkUserIdSql, userValue)
+    .then(idResult => {
+      if (!idResult.rows.length) next(new ClientError('user cannot be found', 404));
+      else {
+        db.query(getUserNameSql, userValue)
+          .then(nameResult => res.status(200).json(nameResult.rows[0]))
+          .catch(err => next(err));
+      }
+    })
+    .catch(err => next(err));
+});
+
+app.get('/api/chat/:user1/:user2', (req, res, next) => {
+  const integerTest = /^[1-9]\d*$/;
+  if (!integerTest.exec(req.params.user1) || !integerTest.exec(req.params.user2)) {
+    next(new ClientError('userId is not an integer', 400));
+  }
+  if (req.params.user1 === req.params.user2) {
+    next(new ClientError('user cannot send chat messages to themselves', 400));
+  }
+  const checkUserIdSql = `
+    select *
+      from "user"
+     where "userId" = $1 or "userId" = $2;
+  `;
+  const getChatSql = `
+    select *
+      from "chat"
+     where ("senderId" = $1 and "receiverId" = $2)
+           or ("senderId" = $2 and "receiverId" = $1)
+    order by "createdAt";
+  `;
+  const userValue = [parseInt(req.params.user1), parseInt(req.params.user2)];
+  db.query(checkUserIdSql, userValue)
+    .then(idResult => {
+      if (idResult.rows.length !== 2) next(new ClientError('user cannot be found', 404));
+      else {
+        db.query(getChatSql, userValue)
+          .then(chatResult => res.status(200).json(chatResult.rows))
+          .catch(err => next(err));
+      }
+    })
+    .catch(err => next(err));
+});
+
+app.post('/api/chat/:user', (req, res, next) => {
+  if (!req.body.user) next(new ClientError('please enter a userId', 400));
+  const integerTest = /^[1-9]\d*$/;
+  if (!integerTest.exec(req.params.user) || !integerTest.exec(req.body.user)) {
+    next(new ClientError('userId is not an integer', 400));
+  }
+  if (req.params.user === req.body.user2) {
+    next(new ClientError('user cannot send chat messages to themselves', 400));
+  }
+  const checkUserIdSql = `
+    select *
+      from "user"
+     where "userId" = $1 or "userId" = $2;
+  `;
+  const postChatSql = `
+    insert into "chat" ("senderId", "receiverId", "message")
+    values ($1, $2, $3)
+    returning *;
+  `;
+  const userValue = [parseInt(req.params.user), parseInt(req.body.user)];
+  const chatValue = [parseInt(req.params.user), parseInt(req.body.user), req.body.message];
+  db.query(checkUserIdSql, userValue)
+    .then(idResult => {
+      if (idResult.rows.length !== 2) next(new ClientError('user cannot be found', 404));
+      else {
+        db.query(postChatSql, chatValue)
+          .then(chatResult => res.status(200).json(chatResult.rows))
+          .catch(err => next(err));
+      }
+    })
+    .catch(err => next(err));
+});
 
 app.use('/api', (req, res, next) => {
   next(new ClientError(`cannot ${req.method} ${req.originalUrl}`, 404));
@@ -597,7 +735,7 @@ app.use((err, req, res, next) => {
   }
 });
 
-app.listen(process.env.PORT, () => {
+const server = app.listen(process.env.PORT, () => {
   // eslint-disable-next-line no-console
   console.log('Listening on port', process.env.PORT);
 });
@@ -616,3 +754,33 @@ app.use((err, req, res, next) => {
     });
   }
 });
+
+const io = socketIo(server);
+
+const nsp = io.of('/chat');
+nsp.on('connection', socket => {
+  socket.on('subscribe', room => {
+    socket.join(room);
+  });
+
+  // const counter = io.sockets.clients(socket.room).connected;
+  // console.log(io.engine.clients);
+  // console.log(Object.keys(nsp.connected));
+  if (Object.keys(nsp.connected).length > 2) {
+    // console.log('trying to disconnect');
+    // console.log(Object.keys(nsp.connected)[0]);
+    // console.log(io.sockets.connected[Object.keys(nsp.connected)[0]]);
+    if (io.sockets.connected[Object.keys(nsp.connected)[0]]) {
+      io.sockets.connected[Object.keys(nsp.connected)[0]].disconnect();
+    }
+  }
+
+  socket.on('send message', data => {
+    socket.broadcast.to(data.room).emit('conversation private post', {
+      message: data.message,
+      couter: data.counter,
+      user: data.user
+    });
+  });
+});
+nsp.emit('hi', 'stranger!');

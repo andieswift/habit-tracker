@@ -18,7 +18,7 @@ export default class App extends React.Component {
       loggedIn: true,
       newHabitToPush: null,
       sideBarOpen: false,
-      userId: null,
+      userId: parseInt(sessionStorage.getItem('id')),
       newUserHabit: {
         routineId: null,
         habitId: null
@@ -31,9 +31,15 @@ export default class App extends React.Component {
     this.setUserId = this.setUserId.bind(this);
   }
 
-  setUserId(userId) {
+  // setUserId(userId) {
+  //   this.setState(previousState => ({
+  //     userId: userId
+  //   }));
+  // }
+
+  setUserId() {
     this.setState(previousState => ({
-      userId: userId
+      userId: parseInt(sessionStorage.getItem('id'))
     }));
   }
 
