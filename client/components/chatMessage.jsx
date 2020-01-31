@@ -18,7 +18,9 @@ const ChatMessage = props => {
   if (props.userId < props.activeChat) roomId = (props.userId).toString() + props.activeChat;
   else roomId = (props.activeChat).toString() + props.userId;
   const [messageHistory, setMessageHistory] = React.useState([]);
-  const socket = io.connect('/chat');
+  const socket = io.connect('/chat', {
+    transports: ['websocket']
+  });
   React.useEffect(
     () => {
       socket.emit('send message', {
@@ -48,19 +50,6 @@ const ChatMessage = props => {
               return mhCopy;
             }
           );
-        //   const init = {
-        //     method: 'POST',
-        //     headers: {
-        //       'Content-Type': 'application/json'
-        //     },
-        //     body: JSON.stringify({
-        //       user: props.userId,
-        //       message: data.message
-        //     })
-        //   };
-        //   fetch(`/api/chat/${props.activeChat}`, init)
-        //     .then(res => res.json())
-        //     .then(res => false);
         }
       }
     }
