@@ -13,7 +13,7 @@ const Chat = props => {
 
   const isSideBarOpen = () => {
     if (props.isOpen) {
-      return <Sidebar sideRender={'requests'} closeSideBar={props.openSideBar} />;
+      return <Sidebar signOut={props.signOut} sideRender={'requests'} closeSideBar={props.openSideBar} />;
     }
   };
 
@@ -34,7 +34,9 @@ const Chat = props => {
     if (view === 'main') {
       return <ChatUserList userId={userId} chatUser={chatUser} setView={setView}
         setActiveChat={setActiveChat} />;
-    } else return <ChatMessage userId={userId} activeChat={activeChat} />;
+    } else {
+      return <ChatMessage userId={userId} activeChat={activeChat}/>;
+    }
   };
 
   return (

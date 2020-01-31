@@ -37,7 +37,7 @@ module.exports = {
       '/api': `http://localhost:${process.env.PORT}`,
       '/socket.io': {
         target: `http://localhost:${process.env.PORT}`,
-        ws: true
+        wss: true
       }
     },
     stats: 'minimal',

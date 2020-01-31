@@ -6,7 +6,9 @@ class SignIn extends React.Component {
     this.state = {
       userName: '',
       userPwd: '',
-      wrongUsername: false
+      wrongUsername: false,
+      emptyFields: false
+
     };
     this.userNameChange = this.userNameChange.bind(this);
     this.passwordChange = this.passwordChange.bind(this);
@@ -32,7 +34,25 @@ class SignIn extends React.Component {
     }
   }
 
+  isUserFieldsEmpty() {
+    if (this.state.emptyFields) {
+      return (
+        <div className="invalid-feedback showError mb-3 warningDiv">
+          You Have Empty Fields
+        </div>
+      );
+    }
+  }
+
   checkAccount() {
+    event.preventDefault();
+    if (this.state.userPwd === '' || this.state.userName === '') {
+      this.setState(previousState => ({ emptyFields: true }));
+      return;
+    } else {
+      this.setState(previousState => ({ emptyFields: false }));
+    }
+
     const newObj = { ...this.state };
     event.preventDefault();
     fetch('/api/auth/login', {
@@ -47,21 +67,38 @@ class SignIn extends React.Component {
         else this.setState(previousState => ({ wrongUsername: true }));
       })
       .then(res => {
-        sessionStorage.setItem('id', res);
-        this.props.setUserId();
-        this.props.history.push('/userHabits');
+        if (res) {
+          sessionStorage.setItem('id', res);
+          this.props.setUserId();
+          this.props.history.push('/userHabits');
+        }
+
       });
   }
 
   render() {
     return (
-      <div className="d-flex flex-column mt-5 align-items-center">
-        <h1>Sign In</h1>
-        <form onSubmit={this.checkAccount}>
+      <div className="d-flex flex-column  align-items-center h-100vh justify-content-center">
+        <h1 className="purple-font">Sign In</h1>
+        <form className="d-flex align-items-center flex-column" >
           {this.isUserNameValid()}
-          <input onChange={this.userNameChange} className="form-control" placeholder="Username" />
-          <input type="password" name="password" autoComplete="on" onChange={this.passwordChange} className="form-control" placeholder="Password" />
-          <button className="btn btn-primary mb-4">Sign In</button>
+          <div className="input-group flex-nowrap mb-3 signup-input">
+            <div className="input-group-prepend">
+              <span className="input-group-text" id="addon-wrapping"><i className="fas fa-user"></i></span>
+            </div>
+            <input onChange={this.userNameChange} className="form-control" placeholder="Username" />
+          </div>
+          <div className="input-group flex-nowrap mb-3 signup-input">
+            <div className="input-group-prepend">
+              <span className="input-group-text" id="addon-wrapping"><i className="fas fa-lock"></i></span>
+            </div>
+            <input type="password" name="password" autoComplete="on" onChange={this.passwordChange} className="form-control" placeholder="Password" />
+          </div>
+          {this.isUserFieldsEmpty()}
+          <div>
+            <button onClick={this.props.back} className="btn btn-outline-secondary d-inline mr-3">Go Back</button>
+            <button onClick={this.checkAccount} className="btn text-light blue-purple-gradient d-inline">Sign In</button>
+          </div>
         </form>
       </div>
     );

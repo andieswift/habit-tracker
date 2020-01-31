@@ -130,25 +130,21 @@ app.get('/api/routine/:id', (req, res, next) => {
 app.post('/api/routine', (req, res, next) => {
   if (!req.body.user) next(new ClientError('Please enter a userId', 400));
   else if (!req.body.routineName) next(new ClientError('Please enter a routine name', 400));
-  else if (!req.body.routineDesc) next(new ClientError('Please enter a routine description', 400));
   const integerTest = /^[1-9]\d*$/;
   if (!integerTest.exec(req.body.user)) {
     next(new ClientError(`userId ${req.body.user} is not an integer`, 400));
   }
+
   let routineId = null;
   const userSql = `
     select "userName"
       from "user"
-     where "userId" = $1;
+      where "userId" = $1;
   `;
-  const duplicateRoutineSql = `
-    select *
-      from "routine"
-     where "routineName" = $1 and "createdBy" = $2;
-  `;
+
   const postRoutineSql = `
-    insert into "routine" ("routineName", "routineDescription", "createdBy")
-    values ($2, $3, $1)
+    insert into "routine" ("routineName", "createdBy")
+    values ($2, $1)
     returning *;
   `;
   const selfRoutineSql = `
@@ -157,27 +153,20 @@ app.post('/api/routine', (req, res, next) => {
     returning *;
   `;
   const userValue = [parseInt(req.body.user)];
-  const routineNameValue = [req.body.routineName, parseInt(req.body.user)];
-  const routineValue = [parseInt(req.body.user), req.body.routineName, req.body.routineDesc];
+
+  const routineValue = [parseInt(req.body.user), req.body.routineName];
   const selfValue = [parseInt(req.body.user), parseInt(req.body.user), routineId, req.body.routineName, true, 'Self-created routine'];
   db.query(userSql, userValue)
     .then(userResult => {
       if (!userResult.rows.length) next(new ClientError(`userId ${req.body.userId} does not exist`, 404));
       else {
-        db.query(duplicateRoutineSql, routineNameValue)
-          .then(routineResult => {
-            if (routineResult.rows.length) next(new ClientError(`routine name ${req.body.routineName} already existed`, 400));
-            else {
-              db.query(postRoutineSql, routineValue)
-                .then(result => {
-                  routineId = parseInt(result.rows[0].routineId);
-                  selfValue[2] = routineId;
-                  db.query(selfRoutineSql, selfValue)
-                    .then(selfResult => res.status(200).json(selfResult.rows[0]))
-                    .catch(err => next(err));
-                })
-                .catch(err => next(err));
-            }
+        db.query(postRoutineSql, routineValue)
+          .then(result => {
+            routineId = parseInt(result.rows[0].routineId);
+            selfValue[2] = routineId;
+            db.query(selfRoutineSql, selfValue)
+              .then(selfResult => res.status(200).json(selfResult.rows[0]))
+              .catch(err => next(err));
           })
           .catch(err => next(err));
       }
@@ -232,10 +221,10 @@ app.put('/api/routine/:id', (req, res, next) => {
 });
 
 // Delete routine
-app.delete('/api/routine/:id', (req, res, next) => {
+app.delete('/api/routine', (req, res, next) => {
   const integerTest = /^[1-9]\d*$/;
-  if (!integerTest.exec(req.params.id)) {
-    next(new ClientError(`routineId ${req.params.id} is not an integer`, 400));
+  if (!integerTest.exec(req.body.id)) {
+    next(new ClientError(`routineId ${req.body.id} is not an integer`, 400));
   }
   const routineCheckSql = `
     select *
@@ -247,10 +236,10 @@ app.delete('/api/routine/:id', (req, res, next) => {
       from "userRoutine"
      where "routineId" = $1;
   `;
-  const value = [parseInt(req.params.id)];
+  const value = [parseInt(req.body.id)];
   db.query(routineCheckSql, value)
     .then(result => {
-      if (!result.rows.length) next(new ClientError(`routineId ${req.params.id} does not exist`, 404));
+      if (!result.rows.length) next(new ClientError(`routineId ${req.body.id} does not exist`, 404));
       else {
         db.query(sql, value)
           .then(result => {
@@ -384,15 +373,6 @@ app.put('/api/request/:id', (req, res, next) => {
     .catch(err => next(err));
 });
 
-// edit habit
-app.put('/api/routine/:id/habit/:id', (req, res, next) => {
-  res.sendStatus(501);
-});
-
-app.post('/api/routine/:id/habit/:id', (req, res, next) => {
-  res.sendStatus(501);
-});
-
 // mark habit completion
 app.post('/api/user/habit', (req, res, next) => {
   const habitId = parseInt(req.body.habitId);
@@ -418,11 +398,6 @@ app.post('/api/user/habit', (req, res, next) => {
     }).catch(err => next(err));
 });
 
-// delete routine habit
-app.delete('/api/routine/:id/habit/:id', (req, res, next) => {
-  res.sendStatus(501);
-});
-
 // delete user habit
 app.delete('/api/habit/', (req, res, next) => {
   const habitId = parseInt(req.body.habitId);
@@ -445,6 +420,28 @@ app.delete('/api/habit/', (req, res, next) => {
     }).catch(err => next(err));
 });
 
+app.delete('/api/routine/habit', (req, res, next) => {
+  const habitId = parseInt(req.body.habitId);
+  const routineId = parseInt(req.body.routineId);
+  if (isNaN(habitId) || !habitId || isNaN(routineId) || !routineId) {
+    throw new ClientError('Habit Id and Routine Id must be a positive integers', 400);
+  }
+
+  const deleteSQL = `
+    delete from "routineHabit"
+    where "habitId" = $1 and "routineId" = $2;
+  `;
+  const params = [habitId, routineId];
+  db.query(deleteSQL, params)
+    .then(result => {
+      if (!result.rowCount) {
+        throw new ClientError(`cannot find item with habitId: ${habitId}`);
+      } else {
+        res.status(204).json({});
+      }
+    }).catch(err => next(err));
+});
+
 // adding habit to userHabit
 app.post('/api/habit', (req, res, next) => {
   const integerTest = /^[1-9]\d*$/;
@@ -456,7 +453,7 @@ app.post('/api/habit', (req, res, next) => {
     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
     returning *;
   `;
-  const userValues = [2, req.body.routineId, req.body.habitId, 0, '04:05:06.789', req.body.frequency, '2019-02-08', req.body.duration, req.body.congratsMessage, req.body.motivationalMessage];
+  const userValues = [req.body.userId, req.body.routineId, req.body.habitId, 0, '04:05:06.789', req.body.frequency, '2019-02-08', req.body.duration, req.body.congratsMessage, req.body.motivationalMessage];
   db.query(sql, userValues)
     .then(result => {
       const nextSql = `
@@ -491,8 +488,8 @@ app.post('/api/routine/:id/habit', (req, res, next) => {
       where "habitName" = $1;
   `;
   const postHabitSql = `
-    insert into "habit" ("habitName", "habitDescription", "createdBy")
-    values ($1, 'Unneeded column', $2)
+    insert into "habit" ("habitName", "createdBy")
+    values ($1, $2)
     returning *;
   `;
   const postRoutineHabitSql = `
@@ -689,6 +686,7 @@ app.get('/api/chat/:user1/:user2', (req, res, next) => {
 
 app.post('/api/chat/:user', (req, res, next) => {
   if (!req.body.user) next(new ClientError('please enter a userId', 400));
+  else if (!req.body.message) next(new ClientError('please enter a message', 400));
   const integerTest = /^[1-9]\d*$/;
   if (!integerTest.exec(req.params.user) || !integerTest.exec(req.body.user)) {
     next(new ClientError('userId is not an integer', 400));
@@ -716,7 +714,50 @@ app.post('/api/chat/:user', (req, res, next) => {
           .then(chatResult => res.status(200).json(chatResult.rows))
           .catch(err => next(err));
       }
-    })
+    });
+});
+
+app.get('/api/name/:user', (req, res, next) => {
+  const sql = `
+    select *
+      from "user"
+     where "userName" ~* $1;
+  `;
+  const value = [`.*${req.params.user}.*`];
+  db.query(sql, value)
+    .then(result => res.status(200).json(result.rows))
+    .catch(err => next(err));
+});
+
+app.get('/api/default/:userId', (req, res, next) => {
+  const integerTest = /^[1-9]\d*$/;
+  if (!integerTest.exec(req.params.userId)) {
+    next(new ClientError(`userId ${req.params.userId} is not an integer`, 404));
+  }
+  const sql = `
+    select *
+      from "defaultCheck"
+     where "userId" = $1;
+  `;
+  const value = [parseInt(req.params.userId)];
+  db.query(sql, value)
+    .then(idResult => res.status(200).json(idResult.rows))
+    .catch(err => next(err));
+});
+
+app.post('/api/default/:userId', (req, res, next) => {
+  const integerTest = /^[1-9]\d*$/;
+  if (!integerTest.exec(req.params.userId)) {
+    next(new ClientError(`userId ${req.params.userId} is not an integer`, 404));
+  }
+  const sql = `
+    insert into "defaultCheck"
+    values ($1)
+    returning *;
+  `;
+  const value = [parseInt(req.params.userId)];
+  db.query(sql, value)
+    .then(idResult => res.status(204))
     .catch(err => next(err));
 });
 
@@ -755,6 +796,11 @@ app.use((err, req, res, next) => {
   }
 });
 
+// const connectedUser = [
+//   { user: null, id: null },
+//   { user: null, id: null }
+// ];
+
 const io = socketIo(server);
 
 const nsp = io.of('/chat');
@@ -763,17 +809,9 @@ nsp.on('connection', socket => {
     socket.join(room);
   });
 
-  // const counter = io.sockets.clients(socket.room).connected;
-  // console.log(io.engine.clients);
-  // console.log(Object.keys(nsp.connected));
-  if (Object.keys(nsp.connected).length > 2) {
-    // console.log('trying to disconnect');
-    // console.log(Object.keys(nsp.connected)[0]);
-    // console.log(io.sockets.connected[Object.keys(nsp.connected)[0]]);
-    if (io.sockets.connected[Object.keys(nsp.connected)[0]]) {
-      io.sockets.connected[Object.keys(nsp.connected)[0]].disconnect();
-    }
-  }
+  socket.on('unsubscribe', room => {
+    socket.leave(room);
+  });
 
   socket.on('send message', data => {
     socket.broadcast.to(data.room).emit('conversation private post', {

@@ -11,15 +11,29 @@ const UserRoutineMain = props => {
 
   function isSideBarOpen() {
     if (props.isOpen) {
-      return <Sidebar sideRender={'inRoutines'} closeSideBar={props.openSideBar} />;
+      return <Sidebar signOut={props.signOut} sideRender={'inRoutines'} closeSideBar={props.openSideBar} />;
     }
   }
 
   React.useEffect(
     () => {
-      fetch(`/api/routine/user/${props.userId}`)
+      fetch(`/api/default/${props.userId}`)
         .then(res => res.json())
-        .then(res => setRoutine(res));
+        .then(res => {
+          fetch(`/api/routine/user/${props.userId}`)
+            .then(result => result.json())
+            .then(result => {
+              if (!res.length) {
+                result.unshift({
+                  routineId: 1,
+                  routineName: 'Web Dev',
+                  createdBy: 1,
+                  createdAt: '2020-01-30T15:47:09.933651-08:00'
+                });
+              }
+              setRoutine(result);
+            });
+        });
     }, []
   );
 
@@ -29,7 +43,7 @@ const UserRoutineMain = props => {
   };
 
   return (
-    <div className="bg-light h-100">
+    <div className="h-100 pb-5">
       <Header title={'User Routines'} headerView={'main'} openSideBar={props.openSideBar} />
       {isSideBarOpen()}
       <RoutineList view='userRoutineMain' routine={routine} userId={props.userId} setView={props.setView}

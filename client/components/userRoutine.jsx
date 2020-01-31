@@ -8,11 +8,11 @@ const UserRoutine = props => {
 
   const createPage = userId => {
     if (view === 'main') {
-      return <UserRoutineMain setView={setView} openSideBar={props.openSideBar}
-        isOpen={props.isOpen} userId={userId} />;
+      return <UserRoutineMain signOut={props.signOut} setView={setView} openSideBar={props.openSideBar}
+        isOpen={props.isOpen} userId={userId} history={props.history} />;
     } else {
-      return <UserRoutineHabit routineId={view} openSideBar={props.openSideBar}
-        isOpen={props.isOpen} userId={userId}/>;
+      return <UserRoutineHabit setView={setView} routineId={view} openSideBar={props.openSideBar}
+        isOpen={props.isOpen} userId={userId} history={props.history}/>;
     }
   };
 

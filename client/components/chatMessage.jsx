@@ -1,5 +1,7 @@
 import React from 'react';
+import ChatMessageItem from './chatMessageItem';
 import io from 'socket.io-client';
+import { useLocation } from 'react-router-dom';
 
 const ChatMessage = props => {
   const [tempMessage, setTempMessage] = React.useState('');
@@ -11,12 +13,12 @@ const ChatMessage = props => {
     message: '',
     counter: 0
   });
+  const location = useLocation();
   let roomId;
   if (props.userId < props.activeChat) roomId = (props.userId).toString() + props.activeChat;
   else roomId = (props.activeChat).toString() + props.userId;
-
+  const [messageHistory, setMessageHistory] = React.useState([]);
   const socket = io.connect('/chat');
-  socket.emit('subscribe', roomId);
   React.useEffect(
     () => {
       socket.emit('send message', {
@@ -25,40 +27,113 @@ const ChatMessage = props => {
         counter: message.counter,
         user: props.userId
       });
-      // return () => socket.off('conversation private post', data => console.log('off', data));
     }, [message.counter]
   );
   socket.on('conversation private post', data => {
-    // console.log(socket.id);
     if (data.user === props.activeChat) {
       if (data.counter !== otherMessage.counter) {
-        // console.log(data.message);
-        setOtherMessage({
-          message: data.message,
-          counter: data.counter
-        });
+        if (data.message) {
+          setOtherMessage({
+            message: data.message,
+            counter: data.counter
+          });
+          setMessageHistory(
+            () => {
+              const mhCopy = [...messageHistory];
+              mhCopy.push({
+                senderId: props.activeChat,
+                receiverId: props.userId,
+                message: data.message
+              });
+              return mhCopy;
+            }
+          );
+        //   const init = {
+        //     method: 'POST',
+        //     headers: {
+        //       'Content-Type': 'application/json'
+        //     },
+        //     body: JSON.stringify({
+        //       user: props.userId,
+        //       message: data.message
+        //     })
+        //   };
+        //   fetch(`/api/chat/${props.activeChat}`, init)
+        //     .then(res => res.json())
+        //     .then(res => false);
+        }
       }
     }
   });
 
+  React.useEffect(
+    () => {
+      fetch(`/api/chat/${props.userId}/${props.activeChat}`)
+        .then(res => res.json())
+        .then(res => setMessageHistory(res));
+    }, [messageHistory]
+  );
+
+  React.useEffect(
+    () => {
+      socket.emit('subscribe', roomId);
+      return () => socket.emit('unsubscribe', roomId);
+    }, [location]
+  );
+
+  const createMessage = () => {
+    if (messageHistory) {
+      return messageHistory.map(item => <ChatMessageItem message={item}
+        user1={props.userId} user2={props.activeChat} key={item.chatId} />);
+    } else return null;
+  };
+
   return (
     <div>
-      <div></div>
       <div>
-        <div className="input-group">
-          <input type="text" onChange={e => setTempMessage(e.target.value)}/>
-          <div className="input-group-prepend">
-            <div className="input-group-text">
-              <i className="fas fa-paper-plane cursor-pointer" onClick={
-                () => {
-                  const tempCounter = message.counter + 1;
-                  setMessage({
-                    message: tempMessage,
-                    counter: tempCounter
-                  });
+        {createMessage()}
+      </div>
+      <div>
+        <div className="card m-2">
+          <div className="row card-body text-left">
+            <input type="text" className="new-routine col-10" value={tempMessage}
+              onChange={e => setTempMessage(e.target.value)} />
+            <i className="fas fa-paper-plane cursor-pointer text-secondary col-2 fa-2x"
+              onClick={ () => {
+                const tempCounter = message.counter + 1;
+                setMessage({
+                  message: tempMessage,
+                  counter: tempCounter
+                });
+                if (tempMessage) {
+                  setMessageHistory(
+                    () => {
+                      const mhCopy = [...messageHistory];
+                      mhCopy.push({
+                        senderId: props.userId,
+                        receiverId: props.activeChat,
+                        message: tempMessage
+                      });
+                      return mhCopy;
+                    }
+                  );
+                  const init = {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                      user: props.activeChat,
+                      message: tempMessage
+                    })
+                  };
+                  fetch(`/api/chat/${props.userId}`, init)
+                    .then(res => res.json())
+                    .then(res => false);
                 }
+                setTempMessage('');
+              }
               }></i>
-            </div>
           </div>
         </div>
       </div>

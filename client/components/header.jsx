@@ -4,27 +4,36 @@ export default function Header(props) {
   const currentURL = new URL(window.location.href);
   const currentPage = currentURL.pathname;
   let className;
+
+  function headerClick() {
+    if (props.setView) {
+      props.setView('main');
+    } else {
+      props.changeView();
+    }
+  }
+
   function headerTypeToRender() {
     if (props.headerView === 'main') {
       return (
         <>
-          <div className="col-10 p-3 titleSize" >{props.title}</div>
+          <div className="titleSize" >{props.title}</div>
           <div onClick={props.openSideBar} className="titleSize"><i className="a fas fa-bars"></i></div>
         </>
       );
     } else if (props.headerView === 'subMain') {
       return (
-        <div>
-          <div className="col-10 p-3 titleSize"><i className="fas fa-chevron-left a"></i></div>
-          <div>{props.title}</div>
+        <div className="p-0 col-12">
+          <div onClick={headerClick} className="titleSize pr-2 d-inline"><i className="fas fa-chevron-left a"></i></div>
+          <div className="titleSize d-inline-block" >{props.title}</div>
         </div>
       );
-    } else if (props.headerView === 'newList') {
+    } else {
       return (
-        <div>
-          <div className="col-10 p-3 titleSize"><i className="fas fa-chevron-left a"></i></div>
-          <div >{props.title}</div>
-          <div><i className="fas fa-check cursor-pointer"></i></div>
+        <div className="p-0 col-12">
+          <div onClick={headerClick} className="titleSize pr-2 d-inline"><i className="fas fa-chevron-left a"></i></div>
+          <div className="titleSize d-inline-block" >{props.title}</div>
+          <div onClick={props.openSideBar} className="titleSize d-inline pl-3"><i className="a fas fa-bars"></i></div>
         </div>
       );
     }
@@ -33,7 +42,7 @@ export default function Header(props) {
   if (currentPage === '/scheduledHabits') {
     className = 'hide';
   } else {
-    className = 'navbar navbar-light header-gradient';
+    className = 'p-4 navbar navbar-light header-gradient';
   }
 
   return (

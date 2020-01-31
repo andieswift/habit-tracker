@@ -10,22 +10,26 @@ const SignUpandSignIn = props => {
   };
 
   const changeViewToSignIn = () => {
-    setAccountView('Sign In ');
+    setAccountView('Sign In');
+  };
+
+  const changeViewToHome = () => {
+    setAccountView('welcome');
   };
 
   const welcomeRender = () => {
     if (view === 'welcome') {
-      return (<>
-        <h1>Hello, Friend</h1>
-        <button onClick={changeViewToSignUp}>Sign Up</button>
-        <button onClick={changeViewToSignIn}>Log In</button>
-      </>
+      return (<div className="h-100vh  blue-purple-gradient d-flex flex-column align-items-center justify-content-center">
+        <h1 className="text-white">Hello, Friend</h1>
+        <button className="btn btn-outline-light m-2 btn-lg" onClick={changeViewToSignUp}>Sign Up</button>
+        <button className="btn btn-outline-light m-2 btn-lg" onClick={changeViewToSignIn}>Log In</button>
+      </div>
       );
     } else if (view === 'sign up') {
-      return <Signup signIn={changeViewToSignIn}/>;
+      return <Signup signIn={changeViewToSignIn} back={changeViewToHome} />;
     } else {
       return (
-        <Signin setUserId={props.setUserId} {...props} />
+        <Signin setUserId={props.setUserId} {...props} back={changeViewToHome}/>
       );
     }
   };

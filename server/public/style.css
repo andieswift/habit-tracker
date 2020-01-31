@@ -14,16 +14,19 @@ body{
   position: fixed;
   height: 100vh;
   width: 100vw;
-  transition: ease-in 0.5s;
+  background-color:rgb(0, 0, 0, 0.4);
+}
+
+.warningDiv{
+  margin-top: -7px;
 }
 
 .open-side {
   background-color: white;
   height: 100vh;
   width: 60vw;
-  transition: ease-out 0.5s;
-  overflow-x: hidden;
 }
+
 
 .side-item{
   height: 15%;
@@ -35,13 +38,19 @@ body{
 }
 
 #root{
-  height: 100%;
+  min-height: 100vh;
+  position: relative;
 }
-
+.h-100vh{
+  height: 100vh;
+}
 .hide{
   display: none;
 }
 
+.h-inheirt{
+  height: inherit;
+}
 .blue-purple-gradient{
   background-image: linear-gradient(#80C3DF, #B5BAE8);
 }
@@ -72,22 +81,22 @@ body{
   font-size: 40px;
 }
 
+
 .footer{
-  position: relative;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
 }
 
 .plus-sign{
-  position: fixed;
-  right: 5%;
+  right:5%;
   bottom: 5%;
-  z-index: 10;
 }
 
 .plane-sign {
-  position: fixed;
   left: 5%;
   bottom: 5%;
-  z-index: 10;
+
 }
 
 input {
@@ -98,6 +107,9 @@ input {
       padding: 10px;
 }
 
+input.outline-input{
+  background-color: rgb(230, 230, 230);
+}
 input:focus{
   outline: none;
 }
@@ -107,10 +119,28 @@ input:focus{
   font-size: 30px;
 }
 
+.signup-input ::placeholder{
+  color:grey;
+  font-size: 20px;
+}
+
 .purple-font {
   color: #B5BAE8;
 }
 
 .blue-purple-gradient{
   background-image: linear-gradient(#80C3DF, #B5BAE8);
+}
+
+input[type="text"]
+{
+    font-size:24px;
+}
+
+.text-lg{
+  font-size: 24px;
+}
+
+.fa-check, .fa-times{
+  font-size:30px;
 }
