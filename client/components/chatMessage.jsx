@@ -83,46 +83,48 @@ const ChatMessage = props => {
         {createMessage()}
       </div>
       <div>
-        <div className="card m-2">
-          <div className="row card-body text-left">
-            <input type="text" className="new-routine col-10" value={tempMessage}
-              onChange={e => setTempMessage(e.target.value)} />
-            <i className="fas fa-paper-plane cursor-pointer text-secondary col-2 fa-2x"
-              onClick={ () => {
-                const tempCounter = message.counter + 1;
-                setMessage({
-                  message: tempMessage,
-                  counter: tempCounter
-                });
-                if (tempMessage) {
-                  setMessageHistory(
-                    () => {
-                      const mhCopy = [...messageHistory];
-                      mhCopy.push({
-                        senderId: props.userId,
-                        receiverId: props.activeChat,
+        <div className="container">
+          <div className="m-2">
+            <div className="row card-body text-left">
+              <input type="text" className="new-routine col-10" value={tempMessage}
+                onChange={e => setTempMessage(e.target.value)} />
+              <i className="fas fa-paper-plane cursor-pointer text-secondary col-2 fa-2x"
+                onClick={() => {
+                  const tempCounter = message.counter + 1;
+                  setMessage({
+                    message: tempMessage,
+                    counter: tempCounter
+                  });
+                  if (tempMessage) {
+                    setMessageHistory(
+                      () => {
+                        const mhCopy = [...messageHistory];
+                        mhCopy.push({
+                          senderId: props.userId,
+                          receiverId: props.activeChat,
+                          message: tempMessage
+                        });
+                        return mhCopy;
+                      }
+                    );
+                    const init = {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                        user: props.activeChat,
                         message: tempMessage
-                      });
-                      return mhCopy;
-                    }
-                  );
-                  const init = {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                      user: props.activeChat,
-                      message: tempMessage
-                    })
-                  };
-                  fetch(`/api/chat/${props.userId}`, init)
-                    .then(res => res.json())
-                    .then(res => false);
+                      })
+                    };
+                    fetch(`/api/chat/${props.userId}`, init)
+                      .then(res => res.json())
+                      .then(res => false);
+                  }
+                  setTempMessage('');
                 }
-                setTempMessage('');
-              }
-              }></i>
+                }></i>
+            </div>
           </div>
         </div>
       </div>
